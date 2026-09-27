@@ -1,0 +1,5 @@
+resource_group_name  = "koalatech-week08-rg"
+location             = "australiaeast"
+acr_name             = "koalatechweek08acr7785"
+storage_account_name = "koalatechweek08st7785"
+aks_cluster_name     = "koalatech-week08-aks"
