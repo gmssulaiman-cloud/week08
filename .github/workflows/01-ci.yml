@@ -183,7 +183,7 @@ jobs:
             -t ${{ vars.ACR_LOGIN_SERVER }}/${{ matrix.image }}:${{ github.sha }} \
             ./${{ matrix.service }}
       - name: Scan image with Docker Scout
-        uses: docker/scout-action@v1
+        uses: docker/scout-action@v1.24.0
         with:
           command: cves,recommendations
           image: ${{ vars.ACR_LOGIN_SERVER }}/${{ matrix.image }}:${{ github.sha }}
