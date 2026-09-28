@@ -143,13 +143,13 @@ jobs:
           kubectl rollout status deployment/enrollment-service \
             -n production \
             --timeout=300s
-
-      - name: Show production resources
+            - name: Show production resources
         run: |
           kubectl get pods -n production
           kubectl get services -n production
           kubectl get pvc -n production
-            - name: Validate Monitoring Components
+
+      - name: Validate Monitoring Components
         run: |
           echo "Checking monitoring pods..."
           kubectl get pods -n monitoring
@@ -162,7 +162,4 @@ jobs:
             -n monitoring \
             --timeout=300s
 
-          echo "Checking monitoring services..."
-          kubectl get services -n monitoring
-
-          echo "Monitoring components validated successfully."
+          echo "Monitoring components validation completed."
