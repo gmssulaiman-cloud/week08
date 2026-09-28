@@ -149,3 +149,20 @@ jobs:
           kubectl get pods -n production
           kubectl get services -n production
           kubectl get pvc -n production
+            - name: Validate Monitoring Components
+        run: |
+          echo "Checking monitoring pods..."
+          kubectl get pods -n monitoring
+
+          echo "Waiting for all monitoring pods to be ready..."
+          kubectl wait \
+            --for=condition=Ready \
+            pod \
+            --all \
+            -n monitoring \
+            --timeout=300s
+
+          echo "Checking monitoring services..."
+          kubectl get services -n monitoring
+
+          echo "Monitoring components validated successfully."
