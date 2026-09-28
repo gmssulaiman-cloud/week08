@@ -10,6 +10,50 @@ on:
       - main
 
 jobs:
+  terraform-apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    concurrency:
+      group: terraform-production
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout tested commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.7
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Export Azure IDs for Terraform
+        run: |
+          echo "ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)" >> "$GITHUB_ENV"
+          echo "ARM_TENANT_ID=$(az account show --query tenantId -o tsv)" >> "$GITHUB_ENV"
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init -input=false
+
+      - name: Terraform Plan
+        working-directory: terraform
+        run: terraform plan -input=false -out=tfplan -no-color
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -input=false -auto-approve tfplan
+
+  deploy-production:
+    needs: terraform-apply
+    # ...rest unchanged
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
@@ -37,6 +81,21 @@ jobs:
             --resource-group ${{ vars.AKS_RESOURCE_GROUP }} \
             --name ${{ vars.AKS_CLUSTER_NAME }} \
             --overwrite-existing
+      - name: Deploy Prometheus and Grafana (Helm)
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+          helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
+            --namespace monitoring --create-namespace \
+            --set grafana.adminPassword="${{ secrets.GRAFANA_ADMIN_PASSWORD }}" \
+            --set prometheus.prometheusSpec.retention=2d \
+            --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
+            --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false \
+            --wait --timeout 10m
+
+      - name: Apply monitoring configuration
+        run: |
+          kubectl apply -f kubernetes/monitoring/
 
       - name: Create production namespace
         run: |

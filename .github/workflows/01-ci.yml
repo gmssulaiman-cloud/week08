@@ -41,6 +41,40 @@ jobs:
         run: terraform validate
 
   # =========================================================
+  # Terraform Plan
+  # =========================================================
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    needs: terraform-validation
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.7
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Export Azure IDs for Terraform
+        run: |
+          echo "ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)" >> "$GITHUB_ENV"
+          echo "ARM_TENANT_ID=$(az account show --query tenantId -o tsv)" >> "$GITHUB_ENV"
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init -input=false
+
+      - name: Terraform Plan
+        working-directory: terraform
+        run: terraform plan -input=false -lock=false -no-color
+        # =========================================================
   # Backend Tests
   # =========================================================
   backend-test:
@@ -141,6 +175,7 @@ jobs:
     needs:
       - backend-test
       - terraform-validation
+      - terraform-plan
 
     # Build and push when code is pushed to main or manually triggered
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'

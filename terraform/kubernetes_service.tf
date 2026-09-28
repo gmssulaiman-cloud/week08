@@ -8,6 +8,12 @@ resource "azurerm_kubernetes_cluster" "aks" {
     name       = "default"
     node_count = 3
     vm_size    = "Standard_D2s_v3"
+
+    upgrade_settings {
+      max_surge                     = "10%"
+      drain_timeout_in_minutes      = 0
+      node_soak_duration_in_minutes = 0
+    }
   }
 
   identity {

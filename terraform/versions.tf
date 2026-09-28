@@ -7,6 +7,14 @@ terraform {
       version = "~> 4.0"
     }
   }
+
+  backend "azurerm" {
+    resource_group_name  = "koalatech-week08-rg"
+    storage_account_name = "koalatechweek08st7785"
+    container_name       = "tfstate"
+    key                  = "terraform.tfstate"
+    use_azuread_auth     = true
+  }
 }
 
 provider "azurerm" {
