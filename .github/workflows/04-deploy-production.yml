@@ -143,7 +143,8 @@ jobs:
           kubectl rollout status deployment/enrollment-service \
             -n production \
             --timeout=300s
-            - name: Show production resources
+            
+      - name: Show production resources
         run: |
           kubectl get pods -n production
           kubectl get services -n production
